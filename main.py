@@ -34,18 +34,27 @@ def attach_target(urls, target):
     """
     return zip(urls, [ target for _ in xrange(len(urls)) ])
 
+def create_labeled_examples(labels, num_examples=5):
+    """
+    Creates labeled examples from a list of labels to be passed into the
+    add_data method of a indicoio custom collection
+    """
+    labeled_examples = []
+    for label in labels:
+        urls = get_image_urls(label, size=num_examples)
+        labeled_examples += attach_target(urls, label)
+
+    return labeled_examples
 
 if __name__ == "__main__":
     collection = Collection("olin-slac-test-image-collection")
 
-    cat_image_urls = get_image_urls("cat")
-    dog_image_urls = get_image_urls("dog")
+    examples = create_labeled_examples(
+        labels=[ "cat", "dog" ],
+        num_examples=5
+    )
 
-    cat_examples = attach_target(cat_image_urls, "cat")
-    dog_examples = attach_target(dog_image_urls, "dog")
-
-    collection.add_data(dog_examples)
-    collection.add_data(cat_examples)
+    collection.add_data(examples)
     collection.train()
 
      # a blocking call until the collection/model is ready
