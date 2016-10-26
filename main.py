@@ -28,6 +28,10 @@ def get_image_urls(query, size=5):
 
 
 def attach_target(urls, target):
+    """
+    Takes in a list of urls and creates example -> target tuple pairs
+    expected by indicoio's custom collections API.
+    """
     return zip(urls, [ target for _ in xrange(len(urls)) ])
 
 
