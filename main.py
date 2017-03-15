@@ -4,6 +4,7 @@
 import indicoio
 indicoio.config.api_key = "YOUR API KEY"
 """
+import urllib.request
 import requests
 
 from indicoio.custom import Collection
@@ -15,7 +16,7 @@ def get_image_urls(query, size=5):
     """
     Takes in an image search query and returns `size` image urls
     """
-    url = IMAGE_SEARCH_URL.format(query=query)
+    url = IMAGE_SEARCH_URL.format(query=urllib.request.pathname2url(query))
     response = requests.get(url)
     soup = BSoup(response.text, "lxml")
 
@@ -32,7 +33,7 @@ def attach_target(urls, target):
     Takes in a list of urls and creates example -> target tuple pairs
     expected by indicoio's custom collections API.
     """
-    return zip(urls, [ target for _ in xrange(len(urls)) ])
+    return zip(urls, [ target for _ in range(len(urls)) ])
 
 def create_labeled_examples(labels, num_examples=5):
     """
@@ -46,25 +47,46 @@ def create_labeled_examples(labels, num_examples=5):
 
     return labeled_examples
 
-if __name__ == "__main__":
+
+def test_collection(examples):
+    # Create Collection
     collection = Collection("olin-slac-test-image-collection")
 
-    examples = create_labeled_examples(
-        labels=[ "cat", "dog" ],
-        num_examples=5
-    )
-
+    try:
+        collection.clear()
+    except:
+        pass
     collection.add_data(examples)
     collection.train()
 
      # a blocking call until the collection/model is ready
     collection.wait()
-
     test_cat_image = "https://s-media-cache-ak0.pinimg.com/originals/84/71/e2/8471e2efdd2d3164895748ee8673124d.jpg"
-    print "Cat Test Result", collection.predict(test_cat_image)
+    print("Cat Test Result", collection.predict(test_cat_image))
 
     test_dog_image = "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcQgkJhtDW-n9qwGytWcYDYKq12AUPznwuQxWhgmxq0TFDLcYa95"
-    print "Dog Test Result", collection.predict(test_dog_image)
+    print("Dog Test Result", collection.predict(test_dog_image))
 
     # Clear so we can use the same collection name during development
     collection.clear()
+
+
+def save_as_csv(examples, labels):
+    import csv
+
+    with open("-".join(labels) + ".csv", 'w') as f:
+        writer = csv.writer(f)
+        writer.writerow(["image", "label"])
+        for example in examples:
+            writer.writerow(example)
+
+
+if __name__ == "__main__":
+    labels=[ "huskies", "Labrador Retriever", "pitbulls" ]
+    examples = create_labeled_examples(
+        labels,
+        num_examples=10
+    )
+
+    save_as_csv(examples, labels)
+
